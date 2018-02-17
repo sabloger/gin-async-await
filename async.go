@@ -15,9 +15,12 @@ type Result struct {
 	Data interface{}
 }
 
-const resultChanTtl = 60
+const (
+	resultChanTtl = 60
+)
 
 var resultChannels = make(map[int]chan *Result)
+var deadChannels = make(map[int]chan bool)
 
 func Request(c *gin.Context) {
 	var _, ridSent = c.GetQuery("rid")
@@ -27,11 +30,12 @@ func Request(c *gin.Context) {
 	var _, isASync = c.GetQuery("async")
 	rid := rand.Int()
 	fmt.Println(rid)
-	resultChannels[rid] = make(chan *Result, 1)
+	resultChannels[rid] = make(chan *Result, 10)
+	deadChannels[rid] = make(chan bool, 1)
 
 	c.Set("rid", rid)
 	c.Abort()
-	go c.Handler()(c)
+	go funcHandler(c, isASync, rid)
 	if isASync {
 		c.JSON(200, map[string]interface{}{
 			"rid": fmt.Sprint(rid),
@@ -41,6 +45,13 @@ func Request(c *gin.Context) {
 	} else {
 		response(c, rid)
 	}
+}
+
+func funcHandler(c *gin.Context, isASync bool, rid int) {
+	c.Handler()(c)
+	fmt.Println("mikham bokoshamesh")
+	deadChannels[rid] <- true
+	fmt.Println("koshtamesh!!")
 }
 
 func Response(c *gin.Context) {
@@ -80,15 +91,28 @@ func deleteChan(rid int) {
 	<-time.After(time.Second * resultChanTtl)
 	if _, ok := resultChannels[rid]; ok {
 		delete(resultChannels, rid)
-		fmt.Printf("Result channel with id '%d' ditroid\n", rid)
+		fmt.Printf("Result channel with id '%d' destroid\n", rid)
 	}
 }
 
 func response(c *gin.Context, rid int) {
-
-	result := <-resultChannels[rid]
-	c.JSON(result.Code, result.Data)
+	fmt.Println("umade inja")
+	select {
+	case result := <-resultChannels[rid]:
+		fmt.Println("umad:", result)
+		c.JSON(result.Code, result.Data)
+	case <-deadChannels[rid]:
+		select {
+		case result := <-resultChannels[rid]:
+			fmt.Println("umad:", result)
+			c.JSON(result.Code, result.Data)
+		default:
+			fmt.Println("naaaaa!!")
+		}
+		fmt.Println("naumad!!")
+	}
 	delete(resultChannels, rid)
+	delete(deadChannels, rid)
 }
 
 // Sample api controller:
