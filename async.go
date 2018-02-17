@@ -37,7 +37,7 @@ func Request(c *gin.Context) {
 	c.Abort()
 	go funcHandler(c, isASync, rid)
 	if isASync {
-		c.JSON(200, map[string]interface{}{
+		c.JSON(200, map[string]interface{}{// todo:: => 204 and rid in header
 			"rid": fmt.Sprint(rid),
 		})
 		c.Abort()
