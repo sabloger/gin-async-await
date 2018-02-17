@@ -27,7 +27,7 @@ func Request(c *gin.Context) {
 	var _, isASync = c.GetQuery("async")
 	rid := rand.Int()
 	fmt.Println(rid)
-	resultChannels[rid] = make(chan *Result,1)
+	resultChannels[rid] = make(chan *Result, 1)
 
 	c.Set("rid", rid)
 	c.Abort()
@@ -91,64 +91,12 @@ func response(c *gin.Context, rid int) {
 	delete(resultChannels, rid)
 }
 
-func Worker(c *gin.Context) {
-	time.Sleep(time.Second * 5)
-	fmt.Println("Worker end")
-
-	ApiResponse(c, 201, map[string]interface{}{
-		"message": "success!",
-	})
-}
-
-
-/*
-<?php
-
-
-class async
-{
-    /** @var  Generator * /
-private $g;
-public function request()
-{
-$this->g = $this->send();
-if($this->g->current())
-return true;
-else
-throw new Exception("ERROR");
-}
-
-public function wait()
-{
-$this->g->next();
-return $this->g->current();
-}
-
-private function send()
-{
-$url = 'http://127.0.0.1:8080/test/t2';
-$res = json_decode(file_get_contents($url . '?async'));
-yield true;
-echo "inja";
-$res = json_decode(file_get_contents($url . '?rid='.$res->rid));
-echo "inja";
-yield $res;
-}
-}
-
-
-$api = new async();
-
-$api->request();
-
-echo "yekar!\n";
-//sleep(1);
-echo "dokar!\n";
-
-$result =  $api->wait();
-
-die(json_encode($result, JSON_PRETTY_PRINT));
-
-
-
-*/
+// Sample api controller:
+//func Worker(c *gin.Context) {
+//	time.Sleep(time.Second * 5)
+//	fmt.Println("Worker end")
+//
+//	ApiResponse(c, 201, map[string]interface{}{
+//		"message": "success!",
+//	})
+//}
